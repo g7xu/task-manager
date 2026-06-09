@@ -6,10 +6,12 @@ All IDs referenced here come from `config.local.json`.
 
 Triggers: "good morning", "daily update", "plan my day".
 
-1. **Refresh the Today view.** The view DSL has no `today` keyword, so set a literal date.
-   Using `today_overdue_view_id`, call `notion-update-view`:
+1. **Refresh the Today views.** The view DSL has no `today` keyword, so set a literal date on
+   **both** the DB tab (`views.today_tab`) **and** the dashboard embed (`views.today_embed`) —
+   they're separate views. For each, `notion-update-view`:
    `CLEAR FILTER; FILTER "Due" <= "YYYY-MM-DD"` (today's date).
-2. **Pull the work.** `notion-fetch` the `today_overdue_view_id` (or query the Tasks data source)
+   (Weekly, also refresh `views.this_week_tab` + `views.this_week_embed` to the end-of-week date.)
+2. **Pull the work.** `notion-fetch` the `views.today_tab` (or query the Tasks data source)
    for tasks with `Due ≤ today` and `Status != Done`. Also surface anything `In progress`.
 3. **Propose a plan.** Order by Priority (P1→P4) then Due. Flag tasks blocked by an unfinished
    **Depends on**. Keep it to a realistic few; call out overload.

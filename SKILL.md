@@ -13,13 +13,18 @@ This skill manages the user's tasks in their Notion **Task Command Center** via 
 
 ## What the Task Command Center looks like
 
-A single Notion page, **Task Command Center**, holding two databases and two embedded views:
+The **Task Command Center** page is a *dashboard*: the Tasks database lives on its **own page**,
+and the dashboard shows **linked-view embeds** of it.
 
 ```
-📋 Task Command Center  (page)
+📋 Task Command Center  (page = dashboard)
 ├── Intro + daily-ritual + well-formed-task guidance
-├── 📋 Tasks      (database, INLINE on the page)  → Board · List · Calendar · Today & Overdue
-└── 🌙 Daily Log  (database)                      → one entry per day
+├── 📅 Today        (linked-view embed → Tasks)
+├── 🗓️ This Week    (linked-view embed → Tasks)
+├── 📥 Inbox        (linked-view embed → Tasks)
+├── 📋 Tasks        (database, on its OWN page — NOT inline)
+│        view tabs: 📥 Inbox · 📅 Today · 🗓️ This Week · 🌫️ Unscheduled · 🗂️ All Active · ✅ Done · Board · Calendar
+└── 🌙 Daily Log    (database)  → one entry per day
 ```
 
 Full schema, view configs, the template row, and rebuild steps:
@@ -83,15 +88,16 @@ Audit the live Notion against `reference/command-center-structure.md`:
    right type/options, and that the **Board / List / Calendar / Today & Overdue** views exist and
    match their specified config (grouping, sorts, filters).
 3. `notion-fetch` the **Daily Log** data source — confirm its properties.
-4. `notion-fetch` the **Command Center page** — confirm both databases, the two embedded views,
-   and the 🧱 template row are present.
+4. `notion-fetch` the **Command Center page** — confirm Tasks (its own page) + Daily Log, the
+   dashboard linked-view embeds (📅 Today / 🗓️ This Week / 📥 Inbox), and the 🧱 template row.
 5. Report a checklist grouped by item: ✅ ok · ⚠️ drifted · ❌ missing.
 
 Then offer to **repair** (ask before changing anything):
 
 - Missing/renamed property → `notion-update-data-source` `ADD COLUMN` / `RENAME COLUMN`.
 - Missing or misconfigured view → `notion-create-view` / `notion-update-view` per spec.
-- Stale **Today & Overdue** filter → refresh to today's literal date.
+- Stale **📅 Today** filter → refresh to today's literal date; **🗓️ This Week** → end-of-week date.
+  (Refresh both the DB view tabs AND the matching dashboard embeds — they're separate views.)
 - Missing template row → recreate it.
 
 **Never delete data to "fix" drift.** Flag unexpected extra properties/views/rows and let the
@@ -121,13 +127,14 @@ Tasks data source properties:
 - **A sort on a board disables drag-and-drop.** With any `SORT BY` active, Notion locks card
   order to the sort, so cards can't be dragged. Board views must have **no sort** (group-by uses
   manual order) for Kanban dragging to work. Keep Priority etc. as a shown card property instead.
-- **Inline databases lazy-render on page load** — a board may appear blank until the user switches
-  tabs (a Notion client quirk, not fixable via API). A **full-page** (non-inline) database avoids
-  this. Trade-off: inline = on-page but occasionally needs a tab-nudge; full-page = always renders.
-  Jason keeps **Tasks inline** on the Command Center page (his choice); the board may need a
-  one-time tab-nudge to paint on load. The Board itself is his UI-made by-option view.
-- **Never embed a view as an API-created linked database.** Linked-view blocks made with
-  `notion-create-view` + `parent_page_id` render unreliably in the Notion client ("Something went
-  wrong" — the **board** worst of all). To show a database on a page, make the **database itself
-  inline** via `notion-update-data-source` `is_inline: true`. If an extra linked view is wanted,
-  create it by hand in the Notion UI (`/linked`).
+- **Dashboard pattern — keep the source DB on its OWN page, then embed linked views.** This is the
+  key architecture (validated 2026-06-09). API-created linked views (`notion-create-view` +
+  `parent_page_id`) **DO render reliably — as long as the source database is NOT also rendered
+  inline on the same page.** The earlier "Something went wrong" crashes were a *self-reference*:
+  linked views pointing at a DB that was inline on that very page. Fix → set the DB
+  `is_inline: false` (its own page), then add linked-view embeds on the dashboard. Jason's Command
+  Center works this way: Tasks lives on its own page; the dashboard embeds 📅 Today / 🗓️ This Week /
+  📥 Inbox. (Bonus: this also avoids the inline-database *lazy-render* quirk, where an inline board
+  can show blank until you switch tabs.)
+- **Embed lists, not boards, via the API.** API-made board views still group "by group" (see above),
+  so embed **list** linked views; add a board to the dashboard via the UI `/linked` if wanted.

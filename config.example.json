@@ -6,6 +6,11 @@
     "tasks_data_source_id": "REPLACE_ME",
     "daily_log_database_id": "REPLACE_ME",
     "daily_log_data_source_id": "REPLACE_ME",
-    "today_overdue_view_id": "REPLACE_ME"
+    "views": {
+      "today_tab": "REPLACE_ME",
+      "today_embed": "REPLACE_ME",
+      "this_week_tab": "REPLACE_ME",
+      "this_week_embed": "REPLACE_ME"
+    }
   }
 }
